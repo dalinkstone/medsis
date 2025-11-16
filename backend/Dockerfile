@@ -9,6 +9,8 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o /app/backend .
 
 FROM scratch
 
-COPY --from=build /app/backend .
+WORKDIR /app
 
-CMD ["./backend"]
+COPY --chown=app:app --from=build /app/backend .
+
+CMD ["/app/backend"]
