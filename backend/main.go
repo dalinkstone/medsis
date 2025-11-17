@@ -2,29 +2,19 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 )
 
 func main() {
-	res, err := http.Get("http://www.example.com")
-	
-	if err != nil {
+
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "Hello of an example running this thing")
+	})
+
+	log.Printf("This server is starting on :8080")
+
+	if err := http.ListenAndServe(":8080", nil); err != nil {
 		log.Fatal(err)
 	}
-	
-	body, err := io.ReadAll(res.Body)
-
-	res.Body.Close()
-
-	if res.StatusCode > 299 {
-		log.Fatalf("Response failed with status code: %d and \n body: %s\n", res.StatusCode, body)
-	}
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Printf("%s", body)
 }
