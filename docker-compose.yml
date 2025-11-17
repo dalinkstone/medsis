@@ -7,3 +7,64 @@ services:
       watch:
         - action: rebuild
           path: ./backend/
+
+  reverseProxy:
+    image: nginx:1.29.3-alpine-slim
+    ports:
+      - "80:80"
+    environment:
+      - NGINX_PORT=80
+
+  primaryDatabase:
+    image: postgres:18.1-alpine
+    shm_size: 128mb
+    environment:
+      - POSTGRES_PASSWORD=example
+
+  cacheDatabase:
+    image: redis:8.2.3-alpine
+
+  metrics:
+    image: prom/prometheus:v3.7.3
+    ports:
+      - "9090:9090"
+
+  logs:
+    image: grafana/loki:3.5.8
+    ports:
+      - "3100:3100"
+
+  tracing:
+    image: ${REGISTRY:-}jaegertracing/jaeger:${JAEGER_VERSION:-latest}
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+      - "4318:4318"
+    environment:
+      - LOG_LEVEL=debug
+    networks:
+      - jaeger-network
+
+  tracingSupplement:
+    image: ${REGISTRY:-}jaegertracing/example-hotrod:${HOTROD_VERSION:-latest}
+    # To run the latest trunk build, find the tag at Docker Hub and use the line below
+    # https://hub.docker.com/r/jaegertracing/example-hotrod-snapshot/tags
+    #image: jaegertracing/example-hotrod-snapshot:0ab8f2fcb12ff0d10830c1ee3bb52b745522db6c
+    #ports:
+    #  - "8080:8080"
+    #  - "8083:8083"
+    command: ["all"]
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318
+    #networks:
+    #  - jaeger-example
+    depends_on:
+      - tracing
+
+  dashboard:
+    image: grafana/grafana:12.4.0-19363970803
+    ports:
+      - "3000:3000"
+
+networks:
+  jaeger-network:

@@ -13,4 +13,6 @@ WORKDIR /app
 
 COPY --chown=app:app --from=build /app/backend .
 
+EXPOSE 8080
+
 CMD ["/app/backend"]
