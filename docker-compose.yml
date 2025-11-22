@@ -1,8 +1,8 @@
 services:
-  backend:
-    build: ./backend/
-    ports:
-      - "8080:8080"
+  go-backend:
+    container_name: go-backend
+    build: 
+      context: ./backend
     expose:
       - "8080"
     networks:
@@ -10,22 +10,28 @@ services:
     develop:
       watch:
         - action: rebuild
-          path: ./backend/
+          path: ./backend
 
-  frontend:
-    build: ./frontend/
-    ports:
-      - "3000:3000"
+  nextjs-frontend:
+    container_name: nextjs-frontend
+    build: 
+      context: ./frontend
+    environment:
+      - HOSTNAME=0.0.0.0
+      - PORT=3000
     expose:
       - "3000"
     networks:
       - app-network
+    depends_on:
+      - go-backend
     develop:
       watch:
         - action: rebuild
-          path: ./frontend/
+          path: ./frontend
 
-  reverseProxy:
+  nginx-reverse-proxy:
+    container_name: nginx-reverse-proxy
     image: nginx:1.29.3-alpine-slim
     ports:
       - "80:80"
@@ -35,8 +41,12 @@ services:
       - NGINX_PORT=80
     networks:
       - app-network
+    depends_on:
+      - go-backend
+      - nextjs-frontend
 
-  primaryDatabase:
+  postgres-database:
+    container_name: postgres-database
     image: postgres:18.1-alpine
     shm_size: 128mb
     environment:
@@ -44,7 +54,8 @@ services:
     networks:
       - app-network
 
-  cacheDatabase:
+  redis-cache:
+    container_name: redis-cache
     image: redis:8.2.3-alpine
     networks:
       - app-network
